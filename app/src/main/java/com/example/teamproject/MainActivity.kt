@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -26,6 +27,8 @@ import com.example.teamproject.ui.screens.SignupScreen
 import com.example.teamproject.ui.screens.WaterTrackingScreen
 import com.example.teamproject.ui.theme.TeamProjectTheme
 import com.example.teamproject.viewmodel.AuthViewModel
+import com.example.teamproject.viewmodel.UserUiState
+import com.example.teamproject.viewmodel.UserViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,17 +49,48 @@ fun WaterTrackingApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val authViewModel: AuthViewModel = viewModel()
+    val userViewModel: UserViewModel = viewModel()
+
+    val userState by userViewModel.userState.collectAsState()
 
     // Show bottom bar and top bar only when not on auth screens
     val isAuthScreen = currentDestination?.route == Screen.Login.route ||
             currentDestination?.route == Screen.Signup.route
+
+    // Load user info when entering main screens
+    LaunchedEffect(isAuthScreen) {
+        if (!isAuthScreen) {
+            userViewModel.loadCurrentUser()
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             if (!isAuthScreen) {
                 TopAppBar(
-                    title = { Text("DrinkFlow") },
+                    title = {
+                        Column {
+                            Text("DrinkFlow")
+                            when (val state = userState) {
+                                is UserUiState.Success -> {
+                                    Text(
+                                        text = "${state.user.name}님 환영합니다",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                is UserUiState.Loading -> {
+                                    Text(
+                                        text = "로딩 중...",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                else -> {}
+                            }
+                        }
+                    },
                     actions = {
                         IconButton(
                             onClick = {

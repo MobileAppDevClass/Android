@@ -1,0 +1,33 @@
+package com.example.teamproject.data.repository
+
+import com.example.teamproject.data.api.RetrofitClient
+import com.example.teamproject.data.api.UserApiService
+import com.example.teamproject.data.api.UserResponse
+
+/**
+ * Repository for user operations
+ */
+class UserRepository(
+    private val userApiService: UserApiService = RetrofitClient.userApiService
+) {
+
+    /**
+     * Get current user information
+     * @return Result containing UserResponse or error
+     */
+    suspend fun getCurrentUser(): Result<UserResponse> {
+        return try {
+            val response = userApiService.getCurrentUser()
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(
+                    Exception("Failed to get user: ${response.code()} ${response.message()}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}

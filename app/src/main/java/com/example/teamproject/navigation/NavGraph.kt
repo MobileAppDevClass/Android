@@ -11,10 +11,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(
     val route: String,
-    val title: String,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
+    val title: String = "",
+    val selectedIcon: ImageVector? = null,
+    val unselectedIcon: ImageVector? = null
 ) {
+    object Login : Screen(
+        route = "login"
+    )
+
+    object Signup : Screen(
+        route = "signup"
+    )
+
     object BodyInfo : Screen(
         route = "body_info",
         title = "신체정보",

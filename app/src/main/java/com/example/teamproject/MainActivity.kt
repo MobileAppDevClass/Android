@@ -18,6 +18,8 @@ import com.example.teamproject.navigation.Screen
 import com.example.teamproject.navigation.bottomNavItems
 import com.example.teamproject.ui.screens.BodyInfoScreen
 import com.example.teamproject.ui.screens.FriendsScreen
+import com.example.teamproject.ui.screens.LoginScreen
+import com.example.teamproject.ui.screens.SignupScreen
 import com.example.teamproject.ui.screens.WaterTrackingScreen
 import com.example.teamproject.ui.theme.TeamProjectTheme
 
@@ -39,45 +41,81 @@ fun WaterTrackingApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
+    // Show bottom bar only when not on auth screens
+    val showBottomBar = currentDestination?.route != Screen.Login.route &&
+            currentDestination?.route != Screen.Signup.route
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            NavigationBar {
-                bottomNavItems.forEach { screen ->
-                    val isSelected = currentDestination?.route == screen.route
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                imageVector = if (isSelected) screen.selectedIcon else screen.unselectedIcon,
-                                contentDescription = screen.title
-                            )
-                        },
-                        label = { Text(screen.title) },
-                        selected = isSelected,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomNavItems.forEach { screen ->
+                        val isSelected = currentDestination?.route == screen.route
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    imageVector = if (isSelected) screen.selectedIcon!! else screen.unselectedIcon!!,
+                                    contentDescription = screen.title
+                                )
+                            },
+                            label = { Text(screen.title) },
+                            selected = isSelected,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    // Pop up to the start destination of the graph to
+                                    // avoid building up a large stack of destinations
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    // Avoid multiple copies of the same destination when
+                                    // reselecting the same item
+                                    launchSingleTop = true
+                                    // Restore state when reselecting a previously selected item
+                                    restoreState = true
                                 }
-                                // Avoid multiple copies of the same destination when
-                                // reselecting the same item
-                                launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
-                                restoreState = true
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.WaterTracking.route,
+            startDestination = Screen.Login.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onLoginSuccess = {
+                        // Navigate to main screen after successful login
+                        navController.navigate(Screen.WaterTracking.route) {
+                            popUpTo(Screen.Login.route) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                    onNavigateToSignup = {
+                        navController.navigate(Screen.Signup.route)
+                    }
+                )
+            }
+            composable(Screen.Signup.route) {
+                SignupScreen(
+                    onSignupSuccess = {
+                        // Navigate to main screen after successful signup
+                        navController.navigate(Screen.WaterTracking.route) {
+                            popUpTo(Screen.Signup.route) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
             composable(Screen.BodyInfo.route) {
                 BodyInfoScreen()
             }

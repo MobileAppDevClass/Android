@@ -20,6 +20,9 @@ data class SignupRequest(
  * Response model for signup API
  */
 data class SignupResponse(
+    @SerializedName("id")
+    val id: Long,
+
     @SerializedName("username")
     val username: String,
 
@@ -42,6 +45,9 @@ data class LoginRequest(
  * Response model for login API
  */
 data class LoginResponse(
+    @SerializedName("id")
+    val id: Long,
+
     @SerializedName("username")
     val username: String,
 

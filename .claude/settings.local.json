@@ -4,7 +4,8 @@
       "Bash(./gradlew build:*)",
       "Bash(claude doctor:*)",
       "WebFetch(domain:drinkflow.p-e.kr)",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

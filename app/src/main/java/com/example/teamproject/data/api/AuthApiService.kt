@@ -14,7 +14,7 @@ interface AuthApiService {
      * @param request SignupRequest containing username, password, and name
      * @return SignupResponse with username and name
      */
-    @POST("/auth/signup")
+    @POST("auth/signup")
     suspend fun signup(
         @Body request: SignupRequest
     ): Response<SignupResponse>
@@ -24,7 +24,7 @@ interface AuthApiService {
      * @param request LoginRequest containing username and password
      * @return LoginResponse with username and name
      */
-    @POST("/auth/login")
+    @POST("auth/login")
     suspend fun login(
         @Body request: LoginRequest
     ): Response<LoginResponse>

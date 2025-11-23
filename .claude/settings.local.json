@@ -3,7 +3,8 @@
     "allow": [
       "Bash(./gradlew build:*)",
       "Bash(claude doctor:*)",
-      "WebFetch(domain:drinkflow.p-e.kr)"
+      "WebFetch(domain:drinkflow.p-e.kr)",
+      "Bash(./gradlew:*)"
     ],
     "deny": [],
     "ask": []

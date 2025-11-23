@@ -1,10 +1,16 @@
 package com.example.teamproject.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -26,6 +32,7 @@ fun SignupScreen(
     var name by remember { mutableStateOf("") }
 
     val signupState by authViewModel.signupState.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     // Handle signup success
     LaunchedEffect(signupState) {
@@ -56,7 +63,14 @@ fun SignupScreen(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
             singleLine = true,
-            enabled = signupState !is AuthUiState.Loading
+            enabled = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
         )
 
         OutlinedTextField(
@@ -68,7 +82,14 @@ fun SignupScreen(
                 .padding(bottom = 16.dp),
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
-            enabled = signupState !is AuthUiState.Loading
+            enabled = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
         )
 
         OutlinedTextField(
@@ -79,7 +100,19 @@ fun SignupScreen(
                 .fillMaxWidth()
                 .padding(bottom = 24.dp),
             singleLine = true,
-            enabled = signupState !is AuthUiState.Loading
+            enabled = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus()
+                    if (username.isNotBlank() && password.isNotBlank() && name.isNotBlank()) {
+                        authViewModel.signup(username, password, name)
+                    }
+                }
+            )
         )
 
         Button(

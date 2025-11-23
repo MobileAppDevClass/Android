@@ -6,9 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,6 +25,7 @@ import com.example.teamproject.ui.screens.LoginScreen
 import com.example.teamproject.ui.screens.SignupScreen
 import com.example.teamproject.ui.screens.WaterTrackingScreen
 import com.example.teamproject.ui.theme.TeamProjectTheme
+import com.example.teamproject.viewmodel.AuthViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,20 +39,46 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WaterTrackingApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val authViewModel: AuthViewModel = viewModel()
 
-    // Show bottom bar only when not on auth screens
-    val showBottomBar = currentDestination?.route != Screen.Login.route &&
-            currentDestination?.route != Screen.Signup.route
+    // Show bottom bar and top bar only when not on auth screens
+    val isAuthScreen = currentDestination?.route == Screen.Login.route ||
+            currentDestination?.route == Screen.Signup.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        topBar = {
+            if (!isAuthScreen) {
+                TopAppBar(
+                    title = { Text("DrinkFlow") },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                authViewModel.logout {
+                                    // Navigate to login screen
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = "로그아웃"
+                            )
+                        }
+                    }
+                )
+            }
+        },
         bottomBar = {
-            if (showBottomBar) {
+            if (!isAuthScreen) {
                 NavigationBar {
                     bottomNavItems.forEach { screen ->
                         val isSelected = currentDestination?.route == screen.route

@@ -104,4 +104,28 @@ class AuthViewModel(
     fun resetLoginState() {
         _loginState.value = AuthUiState.Idle
     }
+
+    /**
+     * Log out the current user
+     */
+    fun logout(onLogoutComplete: () -> Unit) {
+        viewModelScope.launch {
+            val result = repository.logout()
+
+            result.fold(
+                onSuccess = {
+                    // Reset all states
+                    _loginState.value = AuthUiState.Idle
+                    _signupState.value = AuthUiState.Idle
+                    onLogoutComplete()
+                },
+                onFailure = {
+                    // Even if logout fails, reset states and navigate to login
+                    _loginState.value = AuthUiState.Idle
+                    _signupState.value = AuthUiState.Idle
+                    onLogoutComplete()
+                }
+            )
+        }
+    }
 }

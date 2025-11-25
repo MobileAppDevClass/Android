@@ -1,6 +1,8 @@
 package com.example.teamproject.data.repository
 
+import com.example.teamproject.data.api.CreateDrinkRecordRequest
 import com.example.teamproject.data.api.DrinkApiService
+import com.example.teamproject.data.api.DrinkRecord
 import com.example.teamproject.data.api.DrinkRecordsResponse
 import com.example.teamproject.data.api.RetrofitClient
 
@@ -41,6 +43,28 @@ class DrinkRepository(
             } else {
                 Result.failure(
                     Exception("Failed to get drink records: ${response.code()} ${response.message()}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Create a new drink record
+     * @param amount Amount of water in ml
+     * @return Result containing DrinkRecord or error
+     */
+    suspend fun createDrinkRecord(amount: Int): Result<DrinkRecord> {
+        return try {
+            val request = CreateDrinkRecordRequest(amount = amount)
+            val response = drinkApiService.createDrinkRecord(request)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(
+                    Exception("Failed to create drink record: ${response.code()} ${response.message()}")
                 )
             }
         } catch (e: Exception) {

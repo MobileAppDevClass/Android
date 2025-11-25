@@ -11,11 +11,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.teamproject.data.WaterRecord
 import com.example.teamproject.data.api.DrinkRecord
+import com.example.teamproject.viewmodel.CreateDrinkRecordUiState
 import com.example.teamproject.viewmodel.DrinkRecordsUiState
 import com.example.teamproject.viewmodel.DrinkViewModel
 import java.time.LocalDate
@@ -34,10 +38,23 @@ fun WaterTrackingScreen(
 
     // Observe drink records state
     val drinkRecordsState by drinkViewModel.drinkRecordsState.collectAsState()
+    val createDrinkRecordState by drinkViewModel.createDrinkRecordState.collectAsState()
 
-    // Load today's records on first composition
-    LaunchedEffect(Unit) {
-        drinkViewModel.loadTodayRecords()
+    // Get lifecycle owner to observe lifecycle events
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Load today's records when screen resumes (becomes visible)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                drinkViewModel.loadTodayRecords()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     // Update waterRecords when API data is loaded
@@ -48,6 +65,21 @@ fun WaterTrackingScreen(
                 waterRecords = state.data.records.map { drinkRecord ->
                     convertDrinkRecordToWaterRecord(drinkRecord)
                 }
+            }
+            else -> {}
+        }
+    }
+
+    // Handle create drink record success
+    LaunchedEffect(createDrinkRecordState) {
+        when (createDrinkRecordState) {
+            is CreateDrinkRecordUiState.Success -> {
+                // Reload today's records to show the new record
+                drinkViewModel.loadTodayRecords()
+                drinkViewModel.resetCreateDrinkRecordState()
+            }
+            is CreateDrinkRecordUiState.Error -> {
+                // Error handling can be added here (e.g., show snackbar)
             }
             else -> {}
         }
@@ -124,9 +156,11 @@ fun WaterTrackingScreen(
             listOf(100, 200, 300, 500).forEach { amount ->
                 FilledTonalButton(
                     onClick = {
-                        waterRecords = waterRecords + WaterRecord(amount = amount)
+                        // Call API to create drink record
+                        drinkViewModel.createDrinkRecord(amount)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = createDrinkRecordState !is CreateDrinkRecordUiState.Loading
                 ) {
                     Text("${amount}ml")
                 }
@@ -213,15 +247,14 @@ fun WaterTrackingScreen(
                     onClick = {
                         val amount = amountInput.toIntOrNull()
                         if (amount != null && amount > 0) {
-                            waterRecords = waterRecords + WaterRecord(
-                                amount = amount,
-                                note = noteInput
-                            )
+                            // Call API to create drink record
+                            drinkViewModel.createDrinkRecord(amount)
                             amountInput = ""
                             noteInput = ""
                             showDialog = false
                         }
-                    }
+                    },
+                    enabled = createDrinkRecordState !is CreateDrinkRecordUiState.Loading
                 ) {
                     Text("추가")
                 }

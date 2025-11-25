@@ -2,6 +2,7 @@ package com.example.teamproject.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.teamproject.data.api.DrinkRecord
 import com.example.teamproject.data.api.DrinkRecordsResponse
 import com.example.teamproject.data.repository.DrinkRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,16 @@ sealed class DrinkRecordsUiState {
 }
 
 /**
+ * UI State for Creating Drink Record
+ */
+sealed class CreateDrinkRecordUiState {
+    object Idle : CreateDrinkRecordUiState()
+    object Loading : CreateDrinkRecordUiState()
+    data class Success(val record: DrinkRecord) : CreateDrinkRecordUiState()
+    data class Error(val message: String) : CreateDrinkRecordUiState()
+}
+
+/**
  * ViewModel for drink record operations
  */
 class DrinkViewModel(
@@ -28,6 +39,9 @@ class DrinkViewModel(
 
     private val _drinkRecordsState = MutableStateFlow<DrinkRecordsUiState>(DrinkRecordsUiState.Idle)
     val drinkRecordsState: StateFlow<DrinkRecordsUiState> = _drinkRecordsState.asStateFlow()
+
+    private val _createDrinkRecordState = MutableStateFlow<CreateDrinkRecordUiState>(CreateDrinkRecordUiState.Idle)
+    val createDrinkRecordState: StateFlow<CreateDrinkRecordUiState> = _createDrinkRecordState.asStateFlow()
 
     /**
      * Load drink records with optional filters
@@ -80,9 +94,37 @@ class DrinkViewModel(
     }
 
     /**
+     * Create a new drink record
+     * @param amount Amount of water in ml
+     */
+    fun createDrinkRecord(amount: Int) {
+        viewModelScope.launch {
+            _createDrinkRecordState.value = CreateDrinkRecordUiState.Loading
+
+            val result = repository.createDrinkRecord(amount)
+
+            _createDrinkRecordState.value = result.fold(
+                onSuccess = { record ->
+                    CreateDrinkRecordUiState.Success(record)
+                },
+                onFailure = { exception ->
+                    CreateDrinkRecordUiState.Error(exception.message ?: "Unknown error occurred")
+                }
+            )
+        }
+    }
+
+    /**
      * Reset drink records state to Idle
      */
     fun resetDrinkRecordsState() {
         _drinkRecordsState.value = DrinkRecordsUiState.Idle
+    }
+
+    /**
+     * Reset create drink record state to Idle
+     */
+    fun resetCreateDrinkRecordState() {
+        _createDrinkRecordState.value = CreateDrinkRecordUiState.Idle
     }
 }

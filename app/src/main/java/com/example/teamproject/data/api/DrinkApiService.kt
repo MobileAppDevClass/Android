@@ -1,7 +1,9 @@
 package com.example.teamproject.data.api
 
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Query
 
 /**
@@ -26,4 +28,14 @@ interface DrinkApiService {
         @Query("endDate") endDate: String? = null,
         @Query("userId") userId: Long? = null
     ): Response<DrinkRecordsResponse>
+
+    /**
+     * Create a new drink record
+     * @param request CreateDrinkRecordRequest containing the amount
+     * @return DrinkRecord with created record details
+     */
+    @POST("drink-records")
+    suspend fun createDrinkRecord(
+        @Body request: CreateDrinkRecordRequest
+    ): Response<DrinkRecord>
 }

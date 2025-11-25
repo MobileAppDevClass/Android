@@ -3,6 +3,14 @@ package com.example.teamproject.data.api
 import com.google.gson.annotations.SerializedName
 
 /**
+ * Request model for creating drink record
+ */
+data class CreateDrinkRecordRequest(
+    @SerializedName("amount")
+    val amount: Int
+)
+
+/**
  * Drink record model
  */
 data class DrinkRecord(

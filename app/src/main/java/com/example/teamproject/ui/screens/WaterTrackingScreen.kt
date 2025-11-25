@@ -13,16 +13,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.teamproject.data.WaterRecord
+import com.example.teamproject.data.api.DrinkRecord
+import com.example.teamproject.viewmodel.DrinkRecordsUiState
+import com.example.teamproject.viewmodel.DrinkViewModel
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WaterTrackingScreen() {
+fun WaterTrackingScreen(
+    drinkViewModel: DrinkViewModel = viewModel()
+) {
     var waterRecords by remember { mutableStateOf(listOf<WaterRecord>()) }
     var showDialog by remember { mutableStateOf(false) }
     var amountInput by remember { mutableStateOf("") }
     var noteInput by remember { mutableStateOf("") }
+
+    // Observe drink records state
+    val drinkRecordsState by drinkViewModel.drinkRecordsState.collectAsState()
+
+    // Load today's records on first composition
+    LaunchedEffect(Unit) {
+        drinkViewModel.loadTodayRecords()
+    }
+
+    // Update waterRecords when API data is loaded
+    LaunchedEffect(drinkRecordsState) {
+        when (val state = drinkRecordsState) {
+            is DrinkRecordsUiState.Success -> {
+                // Convert API records to WaterRecord
+                waterRecords = state.data.records.map { drinkRecord ->
+                    convertDrinkRecordToWaterRecord(drinkRecord)
+                }
+            }
+            else -> {}
+        }
+    }
 
     // 오늘 마신 물의 총량 계산
     val todayRecords = waterRecords.filter {
@@ -248,4 +277,23 @@ fun WaterRecordItem(
             }
         }
     }
+}
+
+/**
+ * Convert DrinkRecord from API to WaterRecord for UI
+ */
+fun convertDrinkRecordToWaterRecord(drinkRecord: DrinkRecord): WaterRecord {
+    // Parse ISO 8601 date string to LocalDateTime
+    val timestamp = try {
+        LocalDateTime.parse(drinkRecord.date, DateTimeFormatter.ISO_DATE_TIME)
+    } catch (e: Exception) {
+        LocalDateTime.now()
+    }
+
+    return WaterRecord(
+        id = drinkRecord.id.toString(),
+        amount = drinkRecord.amount,
+        timestamp = timestamp,
+        note = ""
+    )
 }

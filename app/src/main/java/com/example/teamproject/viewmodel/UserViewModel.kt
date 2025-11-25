@@ -2,6 +2,10 @@ package com.example.teamproject.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.teamproject.data.api.ActivityLevel
+import com.example.teamproject.data.api.Gender
+import com.example.teamproject.data.api.UserProfileRequest
+import com.example.teamproject.data.api.UserProfileResponse
 import com.example.teamproject.data.api.UserResponse
 import com.example.teamproject.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +24,16 @@ sealed class UserUiState {
 }
 
 /**
+ * UI State for User Profile
+ */
+sealed class UserProfileUiState {
+    object Idle : UserProfileUiState()
+    object Loading : UserProfileUiState()
+    data class Success(val profile: UserProfileResponse) : UserProfileUiState()
+    data class Error(val message: String) : UserProfileUiState()
+}
+
+/**
  * ViewModel for user operations
  */
 class UserViewModel(
@@ -28,6 +42,9 @@ class UserViewModel(
 
     private val _userState = MutableStateFlow<UserUiState>(UserUiState.Idle)
     val userState: StateFlow<UserUiState> = _userState.asStateFlow()
+
+    private val _userProfileState = MutableStateFlow<UserProfileUiState>(UserProfileUiState.Idle)
+    val userProfileState: StateFlow<UserProfileUiState> = _userProfileState.asStateFlow()
 
     /**
      * Load current user information
@@ -50,9 +67,58 @@ class UserViewModel(
     }
 
     /**
+     * Create user profile with physical information
+     * @param userId User ID
+     * @param age User's age
+     * @param gender User's gender
+     * @param height User's height in cm
+     * @param weight User's weight in kg
+     * @param activityLevel User's activity level
+     */
+    fun createUserProfile(
+        userId: Long,
+        age: Int,
+        gender: Gender,
+        height: Double,
+        weight: Double,
+        activityLevel: ActivityLevel
+    ) {
+        viewModelScope.launch {
+            _userProfileState.value = UserProfileUiState.Loading
+
+            val request = UserProfileRequest(
+                userId = userId,
+                age = age,
+                gender = gender,
+                height = height,
+                weight = weight,
+                activityLevel = activityLevel
+            )
+
+            val result = repository.createUserProfile(request)
+
+            _userProfileState.value = result.fold(
+                onSuccess = { profile ->
+                    UserProfileUiState.Success(profile)
+                },
+                onFailure = { exception ->
+                    UserProfileUiState.Error(exception.message ?: "Unknown error occurred")
+                }
+            )
+        }
+    }
+
+    /**
      * Reset user state to Idle
      */
     fun resetUserState() {
         _userState.value = UserUiState.Idle
+    }
+
+    /**
+     * Reset user profile state to Idle
+     */
+    fun resetUserProfileState() {
+        _userProfileState.value = UserProfileUiState.Idle
     }
 }

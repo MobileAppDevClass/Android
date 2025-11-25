@@ -2,6 +2,8 @@ package com.example.teamproject.data.repository
 
 import com.example.teamproject.data.api.RetrofitClient
 import com.example.teamproject.data.api.UserApiService
+import com.example.teamproject.data.api.UserProfileRequest
+import com.example.teamproject.data.api.UserProfileResponse
 import com.example.teamproject.data.api.UserResponse
 
 /**
@@ -24,6 +26,27 @@ class UserRepository(
             } else {
                 Result.failure(
                     Exception("Failed to get user: ${response.code()} ${response.message()}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Create user profile with physical information
+     * @param request UserProfileRequest containing user's physical data
+     * @return Result containing UserProfileResponse or error
+     */
+    suspend fun createUserProfile(request: UserProfileRequest): Result<UserProfileResponse> {
+        return try {
+            val response = userApiService.createUserProfile(request)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(
+                    Exception("Failed to create user profile: ${response.code()} ${response.message()}")
                 )
             }
         } catch (e: Exception) {

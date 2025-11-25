@@ -10,11 +10,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.teamproject.data.BodyInfo
+import com.example.teamproject.data.api.ActivityLevel
+import com.example.teamproject.data.api.Gender
+import com.example.teamproject.viewmodel.UserProfileUiState
+import com.example.teamproject.viewmodel.UserUiState
+import com.example.teamproject.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BodyInfoScreen() {
+fun BodyInfoScreen(
+    userViewModel: UserViewModel = viewModel()
+) {
     var bodyInfo by remember { mutableStateOf(BodyInfo()) }
     var isEditing by remember { mutableStateOf(false) }
 
@@ -25,17 +33,108 @@ fun BodyInfoScreen() {
     var selectedGender by remember { mutableStateOf(bodyInfo.gender) }
     var selectedActivity by remember { mutableStateOf(bodyInfo.activityLevel) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Text(
-            text = "신체 정보",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
+    // Observe user state to get userId
+    val userState by userViewModel.userState.collectAsState()
+    val userProfileState by userViewModel.userProfileState.collectAsState()
+
+    // Load user info on first composition
+    LaunchedEffect(Unit) {
+        userViewModel.loadCurrentUser()
+    }
+
+    // Load existing profile data when user info is loaded
+    LaunchedEffect(userState) {
+        if (userState is UserUiState.Success) {
+            val user = (userState as UserUiState.Success).user
+            user.profile?.let { profile ->
+                bodyInfo = BodyInfo(
+                    height = profile.height.toFloat(),
+                    weight = profile.weight.toFloat(),
+                    age = profile.age,
+                    gender = when (profile.gender) {
+                        Gender.MALE -> "남성"
+                        Gender.FEMALE -> "여성"
+                    },
+                    activityLevel = when (profile.activityLevel) {
+                        ActivityLevel.LOW -> "낮음"
+                        ActivityLevel.MEDIUM -> "보통"
+                        ActivityLevel.HIGH -> "높음"
+                    }
+                )
+                // Update input fields as well
+                heightInput = profile.height.toString()
+                weightInput = profile.weight.toString()
+                ageInput = profile.age.toString()
+                selectedGender = when (profile.gender) {
+                    Gender.MALE -> "남성"
+                    Gender.FEMALE -> "여성"
+                }
+                selectedActivity = when (profile.activityLevel) {
+                    ActivityLevel.LOW -> "낮음"
+                    ActivityLevel.MEDIUM -> "보통"
+                    ActivityLevel.HIGH -> "높음"
+                }
+            }
+        }
+    }
+
+    // Handle profile creation success
+    LaunchedEffect(userProfileState) {
+        when (val state = userProfileState) {
+            is UserProfileUiState.Success -> {
+                // Update local bodyInfo with saved data
+                bodyInfo = BodyInfo(
+                    height = state.profile.height.toFloat(),
+                    weight = state.profile.weight.toFloat(),
+                    age = state.profile.age,
+                    gender = when (state.profile.gender) {
+                        Gender.MALE -> "남성"
+                        Gender.FEMALE -> "여성"
+                    },
+                    activityLevel = when (state.profile.activityLevel) {
+                        ActivityLevel.LOW -> "낮음"
+                        ActivityLevel.MEDIUM -> "보통"
+                        ActivityLevel.HIGH -> "높음"
+                    }
+                )
+                isEditing = false
+                // Reload user data to get updated profile
+                userViewModel.loadCurrentUser()
+                userViewModel.resetUserProfileState()
+            }
+            is UserProfileUiState.Error -> {
+                // Error will be shown via Snackbar below
+            }
+            else -> {}
+        }
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show error message
+    LaunchedEffect(userProfileState) {
+        if (userProfileState is UserProfileUiState.Error) {
+            snackbarHostState.showSnackbar(
+                message = (userProfileState as UserProfileUiState.Error).message
+            )
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = "신체 정보",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
 
         if (isEditing) {
             // 입력 모드
@@ -130,18 +229,52 @@ fun BodyInfoScreen() {
             // 저장 버튼
             Button(
                 onClick = {
-                    bodyInfo = BodyInfo(
-                        height = heightInput.toFloatOrNull() ?: 0f,
-                        weight = weightInput.toFloatOrNull() ?: 0f,
-                        age = ageInput.toIntOrNull() ?: 0,
-                        gender = selectedGender,
-                        activityLevel = selectedActivity
-                    )
-                    isEditing = false
+                    val height = heightInput.toDoubleOrNull()
+                    val weight = weightInput.toDoubleOrNull()
+                    val age = ageInput.toIntOrNull()
+
+                    if (height != null && weight != null && age != null && age > 0) {
+                        // Get userId from userState
+                        if (userState is UserUiState.Success) {
+                            val userId = (userState as UserUiState.Success).user.id
+
+                            // Convert Korean strings to API enums
+                            val gender = when (selectedGender) {
+                                "남성" -> Gender.MALE
+                                "여성" -> Gender.FEMALE
+                                else -> Gender.MALE
+                            }
+
+                            val activityLevel = when (selectedActivity) {
+                                "낮음" -> ActivityLevel.LOW
+                                "보통" -> ActivityLevel.MEDIUM
+                                "높음" -> ActivityLevel.HIGH
+                                else -> ActivityLevel.MEDIUM
+                            }
+
+                            // Call API
+                            userViewModel.createUserProfile(
+                                userId = userId,
+                                age = age,
+                                gender = gender,
+                                height = height,
+                                weight = weight,
+                                activityLevel = activityLevel
+                            )
+                        }
+                    }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = userProfileState !is UserProfileUiState.Loading
             ) {
-                Text("저장")
+                if (userProfileState is UserProfileUiState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("저장")
+                }
             }
         } else {
             // 보기 모드
@@ -205,6 +338,7 @@ fun BodyInfoScreen() {
             ) {
                 Text(if (bodyInfo.height > 0 || bodyInfo.weight > 0) "수정" else "입력하기")
             }
+        }
         }
     }
 }

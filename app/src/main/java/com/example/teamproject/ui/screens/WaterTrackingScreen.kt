@@ -6,7 +6,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +27,7 @@ import com.example.teamproject.viewmodel.DrinkRecordsUiState
 import com.example.teamproject.viewmodel.DrinkViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +39,7 @@ fun WaterTrackingScreen(
     var showDialog by remember { mutableStateOf(false) }
     var amountInput by remember { mutableStateOf("") }
     var noteInput by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 
     // Observe drink records state
     val drinkRecordsState by drinkViewModel.drinkRecordsState.collectAsState()
@@ -43,11 +48,36 @@ fun WaterTrackingScreen(
     // Get lifecycle owner to observe lifecycle events
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Load today's records when screen resumes (becomes visible)
+    // Function to load records for the selected date
+    fun loadRecordsForDate(date: LocalDate) {
+        val isToday = date == LocalDate.now()
+
+        if (isToday) {
+            // For today, don't send dates to get all today's records
+            drinkViewModel.loadDrinkRecords(
+                startDate = null,
+                endDate = null
+            )
+        } else {
+            // For other dates, send local datetime format (no timezone)
+            val startOfDay = date.atStartOfDay()
+            val endOfDay = date.atTime(23, 59, 59)
+
+            // Format as local datetime: 2025-11-25T00:00:00
+            val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+            drinkViewModel.loadDrinkRecords(
+                startDate = formatter.format(startOfDay),
+                endDate = formatter.format(endOfDay)
+            )
+        }
+    }
+
+    // Load records when screen resumes (becomes visible)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                drinkViewModel.loadTodayRecords()
+                loadRecordsForDate(selectedDate)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -55,6 +85,11 @@ fun WaterTrackingScreen(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
+    }
+
+    // Load records when selected date changes
+    LaunchedEffect(selectedDate) {
+        loadRecordsForDate(selectedDate)
     }
 
     // Update waterRecords when API data is loaded
@@ -74,8 +109,8 @@ fun WaterTrackingScreen(
     LaunchedEffect(createDrinkRecordState) {
         when (createDrinkRecordState) {
             is CreateDrinkRecordUiState.Success -> {
-                // Reload today's records to show the new record
-                drinkViewModel.loadTodayRecords()
+                // Reload selected date's records to show the new record
+                loadRecordsForDate(selectedDate)
                 drinkViewModel.resetCreateDrinkRecordState()
             }
             is CreateDrinkRecordUiState.Error -> {
@@ -85,12 +120,10 @@ fun WaterTrackingScreen(
         }
     }
 
-    // 오늘 마신 물의 총량 계산
-    val todayRecords = waterRecords.filter {
-        it.getFormattedDate() == LocalDate.now().toString()
-    }
-    val todayTotal = todayRecords.sumOf { it.amount }
+    // 선택된 날짜의 총 섭취량 계산
+    val dailyTotal = waterRecords.sumOf { it.amount }
     val recommendedAmount = 2000  // 임시로 2000ml 설정
+    val isToday = selectedDate == LocalDate.now()
 
     Column(
         modifier = Modifier
@@ -103,7 +136,82 @@ fun WaterTrackingScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // 오늘의 진행 상황
+        // 날짜 네비게이션
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 이전 날짜 버튼
+                IconButton(onClick = { selectedDate = selectedDate.minusDays(1) }) {
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "이전 날짜")
+                }
+
+                // 날짜 표시
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = selectedDate.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (!isToday) {
+                        Text(
+                            text = selectedDate.format(DateTimeFormatter.ofPattern("E요일")),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = "오늘",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // 다음 날짜 버튼 (오늘 이후는 비활성화)
+                IconButton(
+                    onClick = { selectedDate = selectedDate.plusDays(1) },
+                    enabled = selectedDate < LocalDate.now()
+                ) {
+                    Icon(Icons.Default.ChevronRight, contentDescription = "다음 날짜")
+                }
+            }
+
+            // 오늘로 돌아가기 버튼 (오늘이 아닐 때만 표시)
+            if (!isToday) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    FilledTonalButton(
+                        onClick = { selectedDate = LocalDate.now() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            Icons.Default.Today,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("오늘로 돌아가기")
+                    }
+                }
+            }
+        }
+
+        // 선택된 날짜의 진행 상황
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -117,17 +225,17 @@ fun WaterTrackingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "오늘 마신 물",
+                    text = if (isToday) "오늘 마신 물" else "마신 물",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "$todayTotal ml",
+                    text = "$dailyTotal ml",
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
                 LinearProgressIndicator(
-                    progress = { (todayTotal.toFloat() / recommendedAmount).coerceIn(0f, 1f) },
+                    progress = { (dailyTotal.toFloat() / recommendedAmount).coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
@@ -141,28 +249,30 @@ fun WaterTrackingScreen(
             }
         }
 
-        // 빠른 추가 버튼들
-        Text(
-            text = "빠른 추가",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf(100, 200, 300, 500).forEach { amount ->
-                FilledTonalButton(
-                    onClick = {
-                        // Call API to create drink record
-                        drinkViewModel.createDrinkRecord(amount)
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = createDrinkRecordState !is CreateDrinkRecordUiState.Loading
-                ) {
-                    Text("${amount}ml")
+        // 빠른 추가 버튼들 (오늘만 표시)
+        if (isToday) {
+            Text(
+                text = "빠른 추가",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(100, 200, 300, 500).forEach { amount ->
+                    FilledTonalButton(
+                        onClick = {
+                            // Call API to create drink record
+                            drinkViewModel.createDrinkRecord(amount)
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = createDrinkRecordState !is CreateDrinkRecordUiState.Loading
+                    ) {
+                        Text("${amount}ml")
+                    }
                 }
             }
         }
@@ -176,15 +286,18 @@ fun WaterTrackingScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "오늘의 기록",
+                text = if (isToday) "오늘의 기록" else "기록",
                 style = MaterialTheme.typography.titleMedium
             )
-            IconButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "물 기록 추가")
+            // 추가 버튼은 오늘만 표시
+            if (isToday) {
+                IconButton(onClick = { showDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "물 기록 추가")
+                }
             }
         }
 
-        if (todayRecords.isEmpty()) {
+        if (waterRecords.isEmpty()) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -197,7 +310,7 @@ fun WaterTrackingScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "아직 오늘의 기록이 없습니다",
+                        text = if (isToday) "아직 오늘의 기록이 없습니다" else "이 날짜에 기록이 없습니다",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -206,12 +319,14 @@ fun WaterTrackingScreen(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(todayRecords.sortedByDescending { it.timestamp }) { record ->
+                items(waterRecords.sortedByDescending { it.timestamp }) { record ->
                     WaterRecordItem(
                         record = record,
                         onDelete = {
+                            // 삭제는 오늘만 가능하도록 (API가 있다면 여기서 호출)
                             waterRecords = waterRecords.filter { it.id != record.id }
-                        }
+                        },
+                        showDelete = isToday
                     )
                 }
             }
@@ -271,7 +386,8 @@ fun WaterTrackingScreen(
 @Composable
 fun WaterRecordItem(
     record: WaterRecord,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    showDelete: Boolean = true
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -301,12 +417,14 @@ fun WaterRecordItem(
                     )
                 }
             }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "기록 삭제",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            if (showDelete) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "기록 삭제",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }

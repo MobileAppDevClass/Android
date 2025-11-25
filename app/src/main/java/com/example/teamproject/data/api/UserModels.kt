@@ -92,3 +92,25 @@ data class UserProfileResponse(
     @SerializedName("userId")
     val userId: Long
 )
+
+/**
+ * Friend model
+ */
+data class FriendInfo(
+    @SerializedName("id")
+    val id: Long,
+
+    @SerializedName("name")
+    val name: String,
+
+    @SerializedName("username")
+    val username: String
+)
+
+/**
+ * Response model for friends list
+ */
+data class FriendsResponse(
+    @SerializedName("friends")
+    val friends: List<FriendInfo>
+)

@@ -26,4 +26,11 @@ interface UserApiService {
     suspend fun createUserProfile(
         @Body request: UserProfileRequest
     ): Response<UserProfileResponse>
+
+    /**
+     * Get friends list
+     * @return FriendsResponse with list of friends
+     */
+    @GET("friends")
+    suspend fun getFriends(): Response<FriendsResponse>
 }

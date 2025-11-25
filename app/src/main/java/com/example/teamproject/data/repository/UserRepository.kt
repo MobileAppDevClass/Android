@@ -1,5 +1,6 @@
 package com.example.teamproject.data.repository
 
+import com.example.teamproject.data.api.FriendsResponse
 import com.example.teamproject.data.api.RetrofitClient
 import com.example.teamproject.data.api.UserApiService
 import com.example.teamproject.data.api.UserProfileRequest
@@ -47,6 +48,26 @@ class UserRepository(
             } else {
                 Result.failure(
                     Exception("Failed to create user profile: ${response.code()} ${response.message()}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get friends list
+     * @return Result containing FriendsResponse or error
+     */
+    suspend fun getFriends(): Result<FriendsResponse> {
+        return try {
+            val response = userApiService.getFriends()
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(
+                    Exception("Failed to get friends: ${response.code()} ${response.message()}")
                 )
             }
         } catch (e: Exception) {

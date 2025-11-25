@@ -9,7 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.teamproject.viewmodel.FriendsUiState
+import com.example.teamproject.viewmodel.UserViewModel
 
 data class Friend(
     val id: String,
@@ -23,17 +29,48 @@ data class Friend(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendsScreen() {
-    // 임시 친구 데이터
-    var friends by remember {
-        mutableStateOf(
-            listOf(
-                Friend("1", "김철수", 1800),
-                Friend("2", "이영희", 2100),
-                Friend("3", "박민수", 1500),
-                Friend("4", "최지은", 2300)
-            )
-        )
+fun FriendsScreen(
+    userViewModel: UserViewModel = viewModel()
+) {
+    var friends by remember { mutableStateOf(listOf<Friend>()) }
+
+    // Observe friends state
+    val friendsState by userViewModel.friendsState.collectAsState()
+
+    // Get lifecycle owner to observe lifecycle events
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Load friends when screen resumes (becomes visible)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                userViewModel.loadFriends()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Update friends when API data is loaded
+    LaunchedEffect(friendsState) {
+        when (val state = friendsState) {
+            is FriendsUiState.Success -> {
+                // Convert API friends to UI friends
+                // Note: todayWaterAmount is set to 0 since API doesn't provide it
+                friends = state.data.friends.map { friendInfo ->
+                    Friend(
+                        id = friendInfo.id.toString(),
+                        name = friendInfo.name,
+                        todayWaterAmount = 0, // TODO: Get from separate API
+                        goalAmount = 2000
+                    )
+                }
+            }
+            else -> {}
+        }
     }
 
     // 나의 오늘 물 섭취량 (임시)

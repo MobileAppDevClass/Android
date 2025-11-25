@@ -3,6 +3,7 @@ package com.example.teamproject.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.teamproject.data.api.ActivityLevel
+import com.example.teamproject.data.api.FriendsResponse
 import com.example.teamproject.data.api.Gender
 import com.example.teamproject.data.api.UserProfileRequest
 import com.example.teamproject.data.api.UserProfileResponse
@@ -34,6 +35,16 @@ sealed class UserProfileUiState {
 }
 
 /**
+ * UI State for Friends
+ */
+sealed class FriendsUiState {
+    object Idle : FriendsUiState()
+    object Loading : FriendsUiState()
+    data class Success(val data: FriendsResponse) : FriendsUiState()
+    data class Error(val message: String) : FriendsUiState()
+}
+
+/**
  * ViewModel for user operations
  */
 class UserViewModel(
@@ -45,6 +56,9 @@ class UserViewModel(
 
     private val _userProfileState = MutableStateFlow<UserProfileUiState>(UserProfileUiState.Idle)
     val userProfileState: StateFlow<UserProfileUiState> = _userProfileState.asStateFlow()
+
+    private val _friendsState = MutableStateFlow<FriendsUiState>(FriendsUiState.Idle)
+    val friendsState: StateFlow<FriendsUiState> = _friendsState.asStateFlow()
 
     /**
      * Load current user information
@@ -120,5 +134,32 @@ class UserViewModel(
      */
     fun resetUserProfileState() {
         _userProfileState.value = UserProfileUiState.Idle
+    }
+
+    /**
+     * Load friends list
+     */
+    fun loadFriends() {
+        viewModelScope.launch {
+            _friendsState.value = FriendsUiState.Loading
+
+            val result = repository.getFriends()
+
+            _friendsState.value = result.fold(
+                onSuccess = { data ->
+                    FriendsUiState.Success(data)
+                },
+                onFailure = { exception ->
+                    FriendsUiState.Error(exception.message ?: "Unknown error occurred")
+                }
+            )
+        }
+    }
+
+    /**
+     * Reset friends state to Idle
+     */
+    fun resetFriendsState() {
+        _friendsState.value = FriendsUiState.Idle
     }
 }

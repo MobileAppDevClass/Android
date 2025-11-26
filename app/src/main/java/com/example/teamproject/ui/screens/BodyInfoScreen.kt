@@ -52,13 +52,13 @@ fun BodyInfoScreen(
                     weight = profile.weight.toFloat(),
                     age = profile.age,
                     gender = when (profile.gender) {
-                        Gender.MALE -> "남성"
-                        Gender.FEMALE -> "여성"
+                        Gender.MALE -> "Male"
+                        Gender.FEMALE -> "Female"
                     },
                     activityLevel = when (profile.activityLevel) {
-                        ActivityLevel.LOW -> "낮음"
-                        ActivityLevel.MEDIUM -> "보통"
-                        ActivityLevel.HIGH -> "높음"
+                        ActivityLevel.LOW -> "Low"
+                        ActivityLevel.MEDIUM -> "Medium"
+                        ActivityLevel.HIGH -> "High"
                     }
                 )
                 // Update input fields as well
@@ -66,13 +66,13 @@ fun BodyInfoScreen(
                 weightInput = profile.weight.toString()
                 ageInput = profile.age.toString()
                 selectedGender = when (profile.gender) {
-                    Gender.MALE -> "남성"
-                    Gender.FEMALE -> "여성"
+                    Gender.MALE -> "Male"
+                    Gender.FEMALE -> "Female"
                 }
                 selectedActivity = when (profile.activityLevel) {
-                    ActivityLevel.LOW -> "낮음"
-                    ActivityLevel.MEDIUM -> "보통"
-                    ActivityLevel.HIGH -> "높음"
+                    ActivityLevel.LOW -> "Low"
+                    ActivityLevel.MEDIUM -> "Medium"
+                    ActivityLevel.HIGH -> "High"
                 }
             }
         }
@@ -88,13 +88,13 @@ fun BodyInfoScreen(
                     weight = state.profile.weight.toFloat(),
                     age = state.profile.age,
                     gender = when (state.profile.gender) {
-                        Gender.MALE -> "남성"
-                        Gender.FEMALE -> "여성"
+                        Gender.MALE -> "Male"
+                        Gender.FEMALE -> "Female"
                     },
                     activityLevel = when (state.profile.activityLevel) {
-                        ActivityLevel.LOW -> "낮음"
-                        ActivityLevel.MEDIUM -> "보통"
-                        ActivityLevel.HIGH -> "높음"
+                        ActivityLevel.LOW -> "Low"
+                        ActivityLevel.MEDIUM -> "Medium"
+                        ActivityLevel.HIGH -> "High"
                     }
                 )
                 isEditing = false
@@ -131,7 +131,7 @@ fun BodyInfoScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "신체 정보",
+                text = "Body Information",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
@@ -141,7 +141,7 @@ fun BodyInfoScreen(
             OutlinedTextField(
                 value = heightInput,
                 onValueChange = { heightInput = it },
-                label = { Text("키 (cm)") },
+                label = { Text("Height (cm)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -151,7 +151,7 @@ fun BodyInfoScreen(
             OutlinedTextField(
                 value = weightInput,
                 onValueChange = { weightInput = it },
-                label = { Text("몸무게 (kg)") },
+                label = { Text("Weight (kg)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -161,16 +161,16 @@ fun BodyInfoScreen(
             OutlinedTextField(
                 value = ageInput,
                 onValueChange = { ageInput = it },
-                label = { Text("나이") },
+                label = { Text("Age") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp)
             )
 
-            // 성별 선택
+            // Gender selection
             Text(
-                text = "성별",
+                text = "Gender",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -181,22 +181,22 @@ fun BodyInfoScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
-                    selected = selectedGender == "남성",
-                    onClick = { selectedGender = "남성" },
-                    label = { Text("남성") },
+                    selected = selectedGender == "Male",
+                    onClick = { selectedGender = "Male" },
+                    label = { Text("Male") },
                     modifier = Modifier.weight(1f)
                 )
                 FilterChip(
-                    selected = selectedGender == "여성",
-                    onClick = { selectedGender = "여성" },
-                    label = { Text("여성") },
+                    selected = selectedGender == "Female",
+                    onClick = { selectedGender = "Female" },
+                    label = { Text("Female") },
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            // 활동량 선택
+            // Activity level selection
             Text(
-                text = "활동량",
+                text = "Activity Level",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -207,21 +207,21 @@ fun BodyInfoScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
-                    selected = selectedActivity == "낮음",
-                    onClick = { selectedActivity = "낮음" },
-                    label = { Text("낮음") },
+                    selected = selectedActivity == "Low",
+                    onClick = { selectedActivity = "Low" },
+                    label = { Text("Low") },
                     modifier = Modifier.weight(1f)
                 )
                 FilterChip(
-                    selected = selectedActivity == "보통",
-                    onClick = { selectedActivity = "보통" },
-                    label = { Text("보통") },
+                    selected = selectedActivity == "Medium",
+                    onClick = { selectedActivity = "Medium" },
+                    label = { Text("Medium") },
                     modifier = Modifier.weight(1f)
                 )
                 FilterChip(
-                    selected = selectedActivity == "높음",
-                    onClick = { selectedActivity = "높음" },
-                    label = { Text("높음") },
+                    selected = selectedActivity == "High",
+                    onClick = { selectedActivity = "High" },
+                    label = { Text("High") },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -238,17 +238,17 @@ fun BodyInfoScreen(
                         if (userState is UserUiState.Success) {
                             val user = (userState as UserUiState.Success).user
 
-                            // Convert Korean strings to API enums
+                            // Convert English strings to API enums
                             val gender = when (selectedGender) {
-                                "남성" -> Gender.MALE
-                                "여성" -> Gender.FEMALE
+                                "Male" -> Gender.MALE
+                                "Female" -> Gender.FEMALE
                                 else -> Gender.MALE
                             }
 
                             val activityLevel = when (selectedActivity) {
-                                "낮음" -> ActivityLevel.LOW
-                                "보통" -> ActivityLevel.MEDIUM
-                                "높음" -> ActivityLevel.HIGH
+                                "Low" -> ActivityLevel.LOW
+                                "Medium" -> ActivityLevel.MEDIUM
+                                "High" -> ActivityLevel.HIGH
                                 else -> ActivityLevel.MEDIUM
                             }
 
@@ -286,7 +286,7 @@ fun BodyInfoScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("저장")
+                    Text("Save")
                 }
             }
         } else {
@@ -315,7 +315,7 @@ fun BodyInfoScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "정보를 불러올 수 없습니다",
+                                text = "Unable to load information",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -329,11 +329,11 @@ fun BodyInfoScreen(
                                 .padding(bottom = 16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                InfoRow("키", "${bodyInfo.height} cm")
-                                InfoRow("몸무게", "${bodyInfo.weight} kg")
-                                InfoRow("나이", "${bodyInfo.age}세")
-                                InfoRow("성별", bodyInfo.gender)
-                                InfoRow("활동량", bodyInfo.activityLevel)
+                                InfoRow("Height", "${bodyInfo.height} cm")
+                                InfoRow("Weight", "${bodyInfo.weight} kg")
+                                InfoRow("Age", "${bodyInfo.age}")
+                                InfoRow("Gender", bodyInfo.gender)
+                                InfoRow("Activity Level", bodyInfo.activityLevel)
 
                                 // Show recommended water intake if profile is available
                                 if (userState is UserUiState.Success) {
@@ -342,7 +342,7 @@ fun BodyInfoScreen(
                                         Divider(modifier = Modifier.padding(vertical = 12.dp))
 
                                         Text(
-                                            text = "오늘 마신 물",
+                                            text = "Today's Water Intake",
                                             style = MaterialTheme.typography.titleMedium,
                                             modifier = Modifier.padding(bottom = 4.dp)
                                         )
@@ -354,7 +354,7 @@ fun BodyInfoScreen(
                                         )
 
                                         Text(
-                                            text = "권장 일일 물 섭취량",
+                                            text = "Recommended Daily Intake",
                                             style = MaterialTheme.typography.titleMedium,
                                             modifier = Modifier.padding(bottom = 4.dp)
                                         )
@@ -380,7 +380,7 @@ fun BodyInfoScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "아직 신체 정보가 입력되지 않았습니다",
+                                    text = "No body information entered yet",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -398,7 +398,7 @@ fun BodyInfoScreen(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(if (bodyInfo.height > 0 || bodyInfo.weight > 0) "수정" else "입력하기")
+                        Text(if (bodyInfo.height > 0 || bodyInfo.weight > 0) "Edit" else "Enter Information")
                     }
                 }
             }

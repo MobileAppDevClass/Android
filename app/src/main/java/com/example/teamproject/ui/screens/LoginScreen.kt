@@ -48,7 +48,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "로그인",
+            text = "Login",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
@@ -114,7 +114,7 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("로그인")
+                Text("Login")
             }
         }
 
@@ -132,7 +132,7 @@ fun LoginScreen(
         if (loginState is AuthUiState.Success) {
             val data = (loginState as AuthUiState.Success).data
             Text(
-                text = "로그인 성공! 환영합니다, ${data.name}님",
+                text = "Login successful! Welcome, ${data.name}",
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 16.dp)
@@ -145,7 +145,7 @@ fun LoginScreen(
             onClick = onNavigateToSignup,
             enabled = loginState !is AuthUiState.Loading
         ) {
-            Text("계정이 없으신가요? 회원가입")
+            Text("Don't have an account? Sign up")
         }
     }
 }

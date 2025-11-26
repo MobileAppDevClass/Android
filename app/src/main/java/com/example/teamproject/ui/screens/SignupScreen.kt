@@ -50,7 +50,7 @@ fun SignupScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "회원가입",
+            text = "Sign Up",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
@@ -135,7 +135,7 @@ fun SignupScreen(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("회원가입")
+                Text("Sign Up")
             }
         }
 
@@ -153,7 +153,7 @@ fun SignupScreen(
         if (signupState is AuthUiState.Success) {
             val data = (signupState as AuthUiState.Success).data
             Text(
-                text = "회원가입 성공! 환영합니다, ${data.name}님",
+                text = "Sign up successful! Welcome, ${data.name}",
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 16.dp)
@@ -166,7 +166,7 @@ fun SignupScreen(
             onClick = onNavigateToLogin,
             enabled = signupState !is AuthUiState.Loading
         ) {
-            Text("이미 계정이 있으신가요? 로그인")
+            Text("Already have an account? Login")
         }
     }
 }

@@ -150,7 +150,7 @@ fun WaterTrackingScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "물 마시기 기록",
+            text = "Water Intake Tracking",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -170,7 +170,7 @@ fun WaterTrackingScreen(
             ) {
                 // 이전 날짜 버튼
                 IconButton(onClick = { selectedDate = selectedDate.minusDays(1) }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "이전 날짜")
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous day")
                 }
 
                 // 날짜 표시
@@ -179,18 +179,18 @@ fun WaterTrackingScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = selectedDate.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")),
+                        text = selectedDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
                         style = MaterialTheme.typography.titleMedium
                     )
                     if (!isToday) {
                         Text(
-                            text = selectedDate.format(DateTimeFormatter.ofPattern("E요일")),
+                            text = selectedDate.format(DateTimeFormatter.ofPattern("EEEE")),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
                         Text(
-                            text = "오늘",
+                            text = "Today",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -202,7 +202,7 @@ fun WaterTrackingScreen(
                     onClick = { selectedDate = selectedDate.plusDays(1) },
                     enabled = selectedDate < LocalDate.now()
                 ) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "다음 날짜")
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Next day")
                 }
             }
 
@@ -224,7 +224,7 @@ fun WaterTrackingScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("오늘로 돌아가기")
+                        Text("Back to Today")
                     }
                 }
             }
@@ -244,7 +244,7 @@ fun WaterTrackingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (isToday) "오늘 마신 물" else "마신 물",
+                    text = if (isToday) "Today's Water Intake" else "Water Intake",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
@@ -261,7 +261,7 @@ fun WaterTrackingScreen(
                         .height(8.dp),
                 )
                 Text(
-                    text = "목표: $recommendedAmount ml",
+                    text = "Goal: $recommendedAmount ml",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -271,7 +271,7 @@ fun WaterTrackingScreen(
         // 빠른 추가 버튼들 (오늘만 표시)
         if (isToday) {
             Text(
-                text = "빠른 추가",
+                text = "Quick Add",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -305,13 +305,13 @@ fun WaterTrackingScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = if (isToday) "오늘의 기록" else "기록",
+                text = if (isToday) "Today's Records" else "Records",
                 style = MaterialTheme.typography.titleMedium
             )
             // 추가 버튼은 오늘만 표시
             if (isToday) {
                 IconButton(onClick = { showDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "물 기록 추가")
+                    Icon(Icons.Default.Add, contentDescription = "Add water record")
                 }
             }
         }
@@ -341,7 +341,7 @@ fun WaterTrackingScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "기록을 불러올 수 없습니다",
+                            text = "Unable to load records",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -361,7 +361,7 @@ fun WaterTrackingScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (isToday) "아직 오늘의 기록이 없습니다" else "이 날짜에 기록이 없습니다",
+                                text = if (isToday) "No records yet for today" else "No records for this date",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -390,13 +390,13 @@ fun WaterTrackingScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("물 마신 기록 추가") },
+            title = { Text("Add Water Record") },
             text = {
                 Column {
                     OutlinedTextField(
                         value = amountInput,
                         onValueChange = { amountInput = it },
-                        label = { Text("양 (ml)") },
+                        label = { Text("Amount (ml)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -405,7 +405,7 @@ fun WaterTrackingScreen(
                     OutlinedTextField(
                         value = noteInput,
                         onValueChange = { noteInput = it },
-                        label = { Text("메모 (선택사항)") },
+                        label = { Text("Note (optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -424,12 +424,12 @@ fun WaterTrackingScreen(
                     },
                     enabled = createDrinkRecordState !is CreateDrinkRecordUiState.Loading
                 ) {
-                    Text("추가")
+                    Text("Add")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("취소")
+                    Text("Cancel")
                 }
             }
         )
@@ -474,7 +474,7 @@ fun WaterRecordItem(
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "기록 삭제",
+                        contentDescription = "Delete record",
                         tint = MaterialTheme.colorScheme.error
                     )
                 }

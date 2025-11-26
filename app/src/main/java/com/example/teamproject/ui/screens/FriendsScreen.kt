@@ -104,7 +104,7 @@ fun FriendsScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "친구와 경쟁",
+            text = "Friends Competition",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -128,7 +128,7 @@ fun FriendsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "나의 오늘 순위",
+                            text = "My Today's Rank",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Surface(
@@ -140,7 +140,7 @@ fun FriendsScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = "${ranking.rank}위",
+                                    text = "#${ranking.rank}",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
@@ -183,7 +183,7 @@ fun FriendsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "오늘의 물 마시기 순위",
+                text = "Today's Water Intake Ranking",
                 style = MaterialTheme.typography.titleMedium
             )
         }
@@ -213,7 +213,7 @@ fun FriendsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "랭킹을 불러올 수 없습니다",
+                            text = "Unable to load rankings",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -233,7 +233,7 @@ fun FriendsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "아직 랭킹 정보가 없습니다",
+                                text = "No ranking information yet",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -321,7 +321,7 @@ fun RankingCard(
                             color = MaterialTheme.colorScheme.primary
                         ) {
                             Text(
-                                text = "나",
+                                text = "Me",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)

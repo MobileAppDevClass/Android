@@ -25,21 +25,21 @@ sealed class Screen(
 
     object BodyInfo : Screen(
         route = "body_info",
-        title = "신체정보",
+        title = "Body Info",
         selectedIcon = Icons.Filled.AccountCircle,
         unselectedIcon = Icons.Outlined.AccountCircle
     )
 
     object WaterTracking : Screen(
         route = "water_tracking",
-        title = "물 기록",
+        title = "Water",
         selectedIcon = Icons.Filled.LocalDrink,
         unselectedIcon = Icons.Outlined.LocalDrink
     )
 
     object Friends : Screen(
         route = "friends",
-        title = "친구",
+        title = "Friends",
         selectedIcon = Icons.Filled.Group,
         unselectedIcon = Icons.Outlined.Group
     )

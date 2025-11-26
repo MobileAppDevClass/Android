@@ -77,14 +77,14 @@ fun WaterTrackingApp() {
                             when (val state = userState) {
                                 is UserUiState.Success -> {
                                     Text(
-                                        text = "${state.user.name}님 환영합니다",
+                                        text = "Welcome, ${state.user.name}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 is UserUiState.Loading -> {
                                     Text(
-                                        text = "로딩 중...",
+                                        text = "Loading...",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -106,7 +106,7 @@ fun WaterTrackingApp() {
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Logout,
-                                contentDescription = "로그아웃"
+                                contentDescription = "Logout"
                             )
                         }
                     }

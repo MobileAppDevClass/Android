@@ -140,3 +140,31 @@ data class FriendsResponse(
     @SerializedName("friends")
     val friends: List<FriendInfo>
 )
+
+/**
+ * Ranking info model
+ */
+data class RankingInfo(
+    @SerializedName("userId")
+    val userId: Long,
+
+    @SerializedName("username")
+    val username: String,
+
+    @SerializedName("name")
+    val name: String,
+
+    @SerializedName("totalAmount")
+    val totalAmount: Int,
+
+    @SerializedName("rank")
+    val rank: Int
+)
+
+/**
+ * Response model for today's rankings
+ */
+data class RankingsResponse(
+    @SerializedName("rankings")
+    val rankings: List<RankingInfo>
+)

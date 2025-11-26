@@ -47,4 +47,11 @@ interface UserApiService {
      */
     @GET("friends")
     suspend fun getFriends(): Response<FriendsResponse>
+
+    /**
+     * Get today's water intake rankings
+     * @return RankingsResponse with list of rankings
+     */
+    @GET("users/today-rankings")
+    suspend fun getTodayRankings(): Response<RankingsResponse>
 }

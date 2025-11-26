@@ -15,36 +15,45 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.teamproject.viewmodel.FriendsUiState
+import com.example.teamproject.viewmodel.RankingsUiState
+import com.example.teamproject.viewmodel.UserUiState
 import com.example.teamproject.viewmodel.UserViewModel
 
-data class Friend(
-    val id: String,
+data class RankingUser(
+    val userId: Long,
+    val username: String,
     val name: String,
-    val todayWaterAmount: Int,
-    val goalAmount: Int = 2000
-) {
-    val progressPercentage: Int
-        get() = ((todayWaterAmount.toFloat() / goalAmount) * 100).toInt().coerceIn(0, 100)
-}
+    val totalAmount: Int,
+    val rank: Int,
+    val isCurrentUser: Boolean = false
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendsScreen(
     userViewModel: UserViewModel = viewModel()
 ) {
-    var friends by remember { mutableStateOf(listOf<Friend>()) }
+    var rankings by remember { mutableStateOf(listOf<RankingUser>()) }
+    var myRanking by remember { mutableStateOf<RankingUser?>(null) }
+    var myGoal by remember { mutableStateOf(2000) }
 
-    // Observe friends state
-    val friendsState by userViewModel.friendsState.collectAsState()
+    // Observe states
+    val rankingsState by userViewModel.rankingsState.collectAsState()
+    val userState by userViewModel.userState.collectAsState()
 
     // Get lifecycle owner to observe lifecycle events
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Load friends when screen resumes (becomes visible)
+    // Load user info and rankings on first composition
+    LaunchedEffect(Unit) {
+        userViewModel.loadCurrentUser()
+    }
+
+    // Load rankings when screen resumes (becomes visible)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                userViewModel.loadFriends()
+                userViewModel.loadTodayRankings()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -54,28 +63,40 @@ fun FriendsScreen(
         }
     }
 
-    // Update friends when API data is loaded
-    LaunchedEffect(friendsState) {
-        when (val state = friendsState) {
-            is FriendsUiState.Success -> {
-                // Convert API friends to UI friends
-                // Note: todayWaterAmount is set to 0 since API doesn't provide it
-                friends = state.data.friends.map { friendInfo ->
-                    Friend(
-                        id = friendInfo.id.toString(),
-                        name = friendInfo.name,
-                        todayWaterAmount = 0, // TODO: Get from separate API
-                        goalAmount = 2000
+    // Get my user ID and recommended amount from user state
+    LaunchedEffect(userState) {
+        if (userState is UserUiState.Success) {
+            val user = (userState as UserUiState.Success).user
+            myGoal = user.profile?.recommendAmount ?: 2000
+        }
+    }
+
+    // Update rankings when API data is loaded
+    LaunchedEffect(rankingsState, userState) {
+        when (val state = rankingsState) {
+            is RankingsUiState.Success -> {
+                val currentUserId = if (userState is UserUiState.Success) {
+                    (userState as UserUiState.Success).user.id
+                } else null
+
+                // Convert API rankings to UI rankings
+                rankings = state.data.rankings.map { rankingInfo ->
+                    RankingUser(
+                        userId = rankingInfo.userId,
+                        username = rankingInfo.username,
+                        name = rankingInfo.name,
+                        totalAmount = rankingInfo.totalAmount,
+                        rank = rankingInfo.rank,
+                        isCurrentUser = rankingInfo.userId == currentUserId
                     )
                 }
+
+                // Find my ranking
+                myRanking = rankings.find { it.isCurrentUser }
             }
             else -> {}
         }
     }
-
-    // 나의 오늘 물 섭취량 (임시)
-    val myWaterAmount = 1600
-    val myGoal = 2000
 
     Column(
         modifier = Modifier
@@ -89,94 +110,144 @@ fun FriendsScreen(
         )
 
         // 나의 현재 상태
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
-            ) {
-                Text(
-                    text = "나의 오늘 기록",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+        myRanking?.let { ranking ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp)
                 ) {
-                    Text(
-                        text = "$myWaterAmount ml",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "${((myWaterAmount.toFloat() / myGoal) * 100).toInt()}%",
-                        style = MaterialTheme.typography.titleLarge
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "나의 오늘 순위",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Surface(
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "${ranking.rank}위",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${ranking.totalAmount} ml",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "${((ranking.totalAmount.toFloat() / myGoal) * 100).toInt()}%",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = { (ranking.totalAmount.toFloat() / myGoal).coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .height(8.dp)
                     )
                 }
-                LinearProgressIndicator(
-                    progress = { myWaterAmount.toFloat() / myGoal },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .height(8.dp)
-                )
             }
         }
 
-        // 친구 목록 헤더
+        // 오늘의 랭킹 헤더
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
+                .padding(bottom = 8.dp, top = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "친구 목록",
+                text = "오늘의 물 마시기 순위",
                 style = MaterialTheme.typography.titleMedium
             )
-            IconButton(onClick = { /* TODO: 친구 추가 기능 */ }) {
-                Icon(Icons.Default.PersonAdd, contentDescription = "친구 추가")
-            }
         }
 
-        // 랭킹 정렬된 친구 목록
-        val sortedFriends = friends.sortedByDescending { it.progressPercentage }
-
-        if (sortedFriends.isEmpty()) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            ) {
+        when (rankingsState) {
+            is RankingsUiState.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "아직 추가된 친구가 없습니다",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    CircularProgressIndicator()
                 }
             }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(sortedFriends) { friend ->
-                    FriendRankingCard(
-                        friend = friend,
-                        rank = sortedFriends.indexOf(friend) + 1
-                    )
+            is RankingsUiState.Error -> {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "랭킹을 불러올 수 없습니다",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+            else -> {
+                if (rankings.isEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "아직 랭킹 정보가 없습니다",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(rankings) { ranking ->
+                            RankingCard(
+                                ranking = ranking,
+                                goalAmount = myGoal
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -184,17 +255,18 @@ fun FriendsScreen(
 }
 
 @Composable
-fun FriendRankingCard(
-    friend: Friend,
-    rank: Int
+fun RankingCard(
+    ranking: RankingUser,
+    goalAmount: Int
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = when (rank) {
-                1 -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                2 -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                3 -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+            containerColor = when {
+                ranking.isCurrentUser -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                ranking.rank == 1 -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                ranking.rank == 2 -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                ranking.rank == 3 -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
                 else -> MaterialTheme.colorScheme.surfaceVariant
             }
         )
@@ -209,7 +281,7 @@ fun FriendRankingCard(
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = MaterialTheme.shapes.medium,
-                color = when (rank) {
+                color = when (ranking.rank) {
                     1 -> MaterialTheme.colorScheme.primary
                     2 -> MaterialTheme.colorScheme.secondary
                     3 -> MaterialTheme.colorScheme.tertiary
@@ -221,9 +293,9 @@ fun FriendRankingCard(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Text(
-                        text = "$rank",
+                        text = "${ranking.rank}",
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (rank <= 3) {
+                        color = if (ranking.rank <= 3) {
                             MaterialTheme.colorScheme.onPrimary
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -234,36 +306,46 @@ fun FriendRankingCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // 친구 정보
+            // 사용자 정보
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = friend.name,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = ranking.name,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (ranking.isCurrentUser) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = "나",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${friend.todayWaterAmount} ml / ${friend.goalAmount} ml",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LinearProgressIndicator(
-                    progress = { friend.todayWaterAmount.toFloat() / friend.goalAmount },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
+                    text = "${ranking.totalAmount} ml",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             // 달성률
+            val progressPercentage = ((ranking.totalAmount.toFloat() / goalAmount) * 100).toInt()
             Text(
-                text = "${friend.progressPercentage}%",
+                text = "$progressPercentage%",
                 style = MaterialTheme.typography.titleLarge,
                 color = when {
-                    friend.progressPercentage >= 100 -> MaterialTheme.colorScheme.primary
-                    friend.progressPercentage >= 70 -> MaterialTheme.colorScheme.secondary
+                    progressPercentage >= 100 -> MaterialTheme.colorScheme.primary
+                    progressPercentage >= 70 -> MaterialTheme.colorScheme.secondary
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 }
             )

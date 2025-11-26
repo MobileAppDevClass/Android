@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.teamproject.data.api.ActivityLevel
 import com.example.teamproject.data.api.FriendsResponse
 import com.example.teamproject.data.api.Gender
+import com.example.teamproject.data.api.RankingsResponse
 import com.example.teamproject.data.api.UpdateUserProfileRequest
 import com.example.teamproject.data.api.UserProfileRequest
 import com.example.teamproject.data.api.UserProfileResponse
@@ -46,6 +47,16 @@ sealed class FriendsUiState {
 }
 
 /**
+ * UI State for Rankings
+ */
+sealed class RankingsUiState {
+    object Idle : RankingsUiState()
+    object Loading : RankingsUiState()
+    data class Success(val data: RankingsResponse) : RankingsUiState()
+    data class Error(val message: String) : RankingsUiState()
+}
+
+/**
  * ViewModel for user operations
  */
 class UserViewModel(
@@ -60,6 +71,9 @@ class UserViewModel(
 
     private val _friendsState = MutableStateFlow<FriendsUiState>(FriendsUiState.Idle)
     val friendsState: StateFlow<FriendsUiState> = _friendsState.asStateFlow()
+
+    private val _rankingsState = MutableStateFlow<RankingsUiState>(RankingsUiState.Idle)
+    val rankingsState: StateFlow<RankingsUiState> = _rankingsState.asStateFlow()
 
     /**
      * Load current user information
@@ -203,5 +217,32 @@ class UserViewModel(
      */
     fun resetFriendsState() {
         _friendsState.value = FriendsUiState.Idle
+    }
+
+    /**
+     * Load today's water intake rankings
+     */
+    fun loadTodayRankings() {
+        viewModelScope.launch {
+            _rankingsState.value = RankingsUiState.Loading
+
+            val result = repository.getTodayRankings()
+
+            _rankingsState.value = result.fold(
+                onSuccess = { data ->
+                    RankingsUiState.Success(data)
+                },
+                onFailure = { exception ->
+                    RankingsUiState.Error(exception.message ?: "Unknown error occurred")
+                }
+            )
+        }
+    }
+
+    /**
+     * Reset rankings state to Idle
+     */
+    fun resetRankingsState() {
+        _rankingsState.value = RankingsUiState.Idle
     }
 }

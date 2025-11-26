@@ -1,6 +1,7 @@
 package com.example.teamproject.data.repository
 
 import com.example.teamproject.data.api.FriendsResponse
+import com.example.teamproject.data.api.RankingsResponse
 import com.example.teamproject.data.api.RetrofitClient
 import com.example.teamproject.data.api.UpdateUserProfileRequest
 import com.example.teamproject.data.api.UserApiService
@@ -94,6 +95,26 @@ class UserRepository(
             } else {
                 Result.failure(
                     Exception("Failed to get friends: ${response.code()} ${response.message()}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get today's water intake rankings
+     * @return Result containing RankingsResponse or error
+     */
+    suspend fun getTodayRankings(): Result<RankingsResponse> {
+        return try {
+            val response = userApiService.getTodayRankings()
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(
+                    Exception("Failed to get rankings: ${response.code()} ${response.message()}")
                 )
             }
         } catch (e: Exception) {

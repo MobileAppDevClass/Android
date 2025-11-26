@@ -189,7 +189,8 @@ fun FriendsScreen(
         }
 
         when (rankingsState) {
-            is RankingsUiState.Loading -> {
+            is RankingsUiState.Idle, is RankingsUiState.Loading -> {
+                // Show loading spinner for both Idle and Loading states
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -218,7 +219,7 @@ fun FriendsScreen(
                     }
                 }
             }
-            else -> {
+            is RankingsUiState.Success -> {
                 if (rankings.isEmpty()) {
                     Card(
                         modifier = Modifier

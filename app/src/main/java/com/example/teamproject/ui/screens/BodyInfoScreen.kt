@@ -291,83 +291,116 @@ fun BodyInfoScreen(
             }
         } else {
             // 보기 모드
-            if (bodyInfo.height > 0 || bodyInfo.weight > 0) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        InfoRow("키", "${bodyInfo.height} cm")
-                        InfoRow("몸무게", "${bodyInfo.weight} kg")
-                        InfoRow("나이", "${bodyInfo.age}세")
-                        InfoRow("성별", bodyInfo.gender)
-                        InfoRow("활동량", bodyInfo.activityLevel)
+            when (userState) {
+                is UserUiState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is UserUiState.Error -> {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "정보를 불러올 수 없습니다",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    if (bodyInfo.height > 0 || bodyInfo.weight > 0) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                InfoRow("키", "${bodyInfo.height} cm")
+                                InfoRow("몸무게", "${bodyInfo.weight} kg")
+                                InfoRow("나이", "${bodyInfo.age}세")
+                                InfoRow("성별", bodyInfo.gender)
+                                InfoRow("활동량", bodyInfo.activityLevel)
 
-                        // Show recommended water intake if profile is available
-                        if (userState is UserUiState.Success) {
-                            val user = (userState as UserUiState.Success).user
-                            user.profile?.let { profile ->
-                                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                                // Show recommended water intake if profile is available
+                                if (userState is UserUiState.Success) {
+                                    val user = (userState as UserUiState.Success).user
+                                    user.profile?.let { profile ->
+                                        Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                                Text(
-                                    text = "오늘 마신 물",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(bottom = 4.dp)
-                                )
-                                Text(
-                                    text = "${profile.todayAmount} ml",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.padding(bottom = 12.dp)
-                                )
+                                        Text(
+                                            text = "오늘 마신 물",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            modifier = Modifier.padding(bottom = 4.dp)
+                                        )
+                                        Text(
+                                            text = "${profile.todayAmount} ml",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.padding(bottom = 12.dp)
+                                        )
 
+                                        Text(
+                                            text = "권장 일일 물 섭취량",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            modifier = Modifier.padding(bottom = 4.dp)
+                                        )
+                                        Text(
+                                            text = "${profile.recommendAmount} ml",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 Text(
-                                    text = "권장 일일 물 섭취량",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(bottom = 4.dp)
-                                )
-                                Text(
-                                    text = "${profile.recommendAmount} ml",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                                    text = "아직 신체 정보가 입력되지 않았습니다",
+                                    style = MaterialTheme.typography.bodyLarge
                                 )
                             }
                         }
                     }
-                }
-            } else {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+
+                    Button(
+                        onClick = {
+                            heightInput = if (bodyInfo.height > 0) bodyInfo.height.toString() else ""
+                            weightInput = if (bodyInfo.weight > 0) bodyInfo.weight.toString() else ""
+                            ageInput = if (bodyInfo.age > 0) bodyInfo.age.toString() else ""
+                            selectedGender = bodyInfo.gender
+                            selectedActivity = bodyInfo.activityLevel
+                            isEditing = true
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "아직 신체 정보가 입력되지 않았습니다",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Text(if (bodyInfo.height > 0 || bodyInfo.weight > 0) "수정" else "입력하기")
                     }
                 }
-            }
-
-            Button(
-                onClick = {
-                    heightInput = if (bodyInfo.height > 0) bodyInfo.height.toString() else ""
-                    weightInput = if (bodyInfo.weight > 0) bodyInfo.weight.toString() else ""
-                    ageInput = if (bodyInfo.age > 0) bodyInfo.age.toString() else ""
-                    selectedGender = bodyInfo.gender
-                    selectedActivity = bodyInfo.activityLevel
-                    isEditing = true
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (bodyInfo.height > 0 || bodyInfo.weight > 0) "수정" else "입력하기")
             }
         }
         }

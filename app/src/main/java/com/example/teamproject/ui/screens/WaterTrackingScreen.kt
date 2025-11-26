@@ -316,37 +316,71 @@ fun WaterTrackingScreen(
             }
         }
 
-        if (waterRecords.isEmpty()) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            ) {
+        // Show loading or data based on state
+        when (drinkRecordsState) {
+            is DrinkRecordsUiState.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = if (isToday) "아직 오늘의 기록이 없습니다" else "이 날짜에 기록이 없습니다",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    CircularProgressIndicator()
                 }
             }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(waterRecords.sortedByDescending { it.timestamp }) { record ->
-                    WaterRecordItem(
-                        record = record,
-                        onDelete = {
-                            // 삭제는 오늘만 가능하도록 (API가 있다면 여기서 호출)
-                            waterRecords = waterRecords.filter { it.id != record.id }
-                        },
-                        showDelete = isToday
-                    )
+            is DrinkRecordsUiState.Error -> {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "기록을 불러올 수 없습니다",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+            else -> {
+                if (waterRecords.isEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (isToday) "아직 오늘의 기록이 없습니다" else "이 날짜에 기록이 없습니다",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(waterRecords.sortedByDescending { it.timestamp }) { record ->
+                            WaterRecordItem(
+                                record = record,
+                                onDelete = {
+                                    // 삭제는 오늘만 가능하도록 (API가 있다면 여기서 호출)
+                                    waterRecords = waterRecords.filter { it.id != record.id }
+                                },
+                                showDelete = isToday
+                            )
+                        }
+                    }
                 }
             }
         }

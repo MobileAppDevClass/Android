@@ -27,6 +27,7 @@ import com.example.teamproject.ui.screens.SignupScreen
 import com.example.teamproject.ui.screens.WaterTrackingScreen
 import com.example.teamproject.ui.theme.TeamProjectTheme
 import com.example.teamproject.viewmodel.AuthViewModel
+import com.example.teamproject.viewmodel.DrinkViewModel
 import com.example.teamproject.viewmodel.UserUiState
 import com.example.teamproject.viewmodel.UserViewModel
 
@@ -50,6 +51,7 @@ fun WaterTrackingApp() {
     val currentDestination = navBackStackEntry?.destination
     val authViewModel: AuthViewModel = viewModel()
     val userViewModel: UserViewModel = viewModel()
+    val drinkViewModel: DrinkViewModel = viewModel()
 
     val userState by userViewModel.userState.collectAsState()
 
@@ -126,17 +128,33 @@ fun WaterTrackingApp() {
                             label = { Text(screen.title) },
                             selected = isSelected,
                             onClick = {
-                                navController.navigate(screen.route) {
-                                    // Pop up to the start destination of the graph to
-                                    // avoid building up a large stack of destinations
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                                if (isSelected) {
+                                    // 같은 탭을 다시 눌렀을 때 - 새로고침
+                                    when (screen.route) {
+                                        Screen.WaterTracking.route -> {
+                                            drinkViewModel.loadDrinkRecords(startDate = null, endDate = null)
+                                        }
+                                        Screen.Friends.route -> {
+                                            userViewModel.loadTodayRankings()
+                                            userViewModel.loadCurrentUser()
+                                        }
+                                        Screen.BodyInfo.route -> {
+                                            userViewModel.loadCurrentUser()
+                                        }
                                     }
-                                    // Avoid multiple copies of the same destination when
-                                    // reselecting the same item
-                                    launchSingleTop = true
-                                    // Restore state when reselecting a previously selected item
-                                    restoreState = true
+                                } else {
+                                    navController.navigate(screen.route) {
+                                        // Pop up to the start destination of the graph to
+                                        // avoid building up a large stack of destinations
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        // Avoid multiple copies of the same destination when
+                                        // reselecting the same item
+                                        launchSingleTop = true
+                                        // Restore state when reselecting a previously selected item
+                                        restoreState = true
+                                    }
                                 }
                             }
                         )
@@ -181,13 +199,16 @@ fun WaterTrackingApp() {
                 )
             }
             composable(Screen.BodyInfo.route) {
-                BodyInfoScreen()
+                BodyInfoScreen(userViewModel = userViewModel)
             }
             composable(Screen.WaterTracking.route) {
-                WaterTrackingScreen()
+                WaterTrackingScreen(
+                    drinkViewModel = drinkViewModel,
+                    userViewModel = userViewModel
+                )
             }
             composable(Screen.Friends.route) {
-                FriendsScreen()
+                FriendsScreen(userViewModel = userViewModel)
             }
         }
     }

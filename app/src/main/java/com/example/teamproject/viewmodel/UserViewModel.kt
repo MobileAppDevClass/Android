@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.teamproject.data.api.ActivityLevel
 import com.example.teamproject.data.api.FriendsResponse
 import com.example.teamproject.data.api.Gender
+import com.example.teamproject.data.api.UpdateUserProfileRequest
 import com.example.teamproject.data.api.UserProfileRequest
 import com.example.teamproject.data.api.UserProfileResponse
 import com.example.teamproject.data.api.UserResponse
@@ -110,6 +111,47 @@ class UserViewModel(
             )
 
             val result = repository.createUserProfile(request)
+
+            _userProfileState.value = result.fold(
+                onSuccess = { profile ->
+                    UserProfileUiState.Success(profile)
+                },
+                onFailure = { exception ->
+                    UserProfileUiState.Error(exception.message ?: "Unknown error occurred")
+                }
+            )
+        }
+    }
+
+    /**
+     * Update user profile with physical information
+     * @param profileId Profile ID
+     * @param age User's age
+     * @param gender User's gender
+     * @param height User's height in cm
+     * @param weight User's weight in kg
+     * @param activityLevel User's activity level
+     */
+    fun updateUserProfile(
+        profileId: Long,
+        age: Int,
+        gender: Gender,
+        height: Double,
+        weight: Double,
+        activityLevel: ActivityLevel
+    ) {
+        viewModelScope.launch {
+            _userProfileState.value = UserProfileUiState.Loading
+
+            val request = UpdateUserProfileRequest(
+                age = age,
+                gender = gender,
+                height = height,
+                weight = weight,
+                activityLevel = activityLevel
+            )
+
+            val result = repository.updateUserProfile(profileId, request)
 
             _userProfileState.value = result.fold(
                 onSuccess = { profile ->

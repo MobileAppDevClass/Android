@@ -2,6 +2,7 @@ package com.example.teamproject.data.repository
 
 import com.example.teamproject.data.api.FriendsResponse
 import com.example.teamproject.data.api.RetrofitClient
+import com.example.teamproject.data.api.UpdateUserProfileRequest
 import com.example.teamproject.data.api.UserApiService
 import com.example.teamproject.data.api.UserProfileRequest
 import com.example.teamproject.data.api.UserProfileResponse
@@ -48,6 +49,31 @@ class UserRepository(
             } else {
                 Result.failure(
                     Exception("Failed to create user profile: ${response.code()} ${response.message()}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Update user profile with physical information
+     * @param profileId Profile ID
+     * @param request UpdateUserProfileRequest containing user's physical data
+     * @return Result containing UserProfileResponse or error
+     */
+    suspend fun updateUserProfile(
+        profileId: Long,
+        request: UpdateUserProfileRequest
+    ): Result<UserProfileResponse> {
+        return try {
+            val response = userApiService.updateUserProfile(profileId, request)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(
+                    Exception("Failed to update user profile: ${response.code()} ${response.message()}")
                 )
             }
         } catch (e: Exception) {

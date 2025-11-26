@@ -234,9 +234,9 @@ fun BodyInfoScreen(
                     val age = ageInput.toIntOrNull()
 
                     if (height != null && weight != null && age != null && age > 0) {
-                        // Get userId from userState
+                        // Get user from userState
                         if (userState is UserUiState.Success) {
-                            val userId = (userState as UserUiState.Success).user.id
+                            val user = (userState as UserUiState.Success).user
 
                             // Convert Korean strings to API enums
                             val gender = when (selectedGender) {
@@ -252,15 +252,28 @@ fun BodyInfoScreen(
                                 else -> ActivityLevel.MEDIUM
                             }
 
-                            // Call API
-                            userViewModel.createUserProfile(
-                                userId = userId,
-                                age = age,
-                                gender = gender,
-                                height = height,
-                                weight = weight,
-                                activityLevel = activityLevel
-                            )
+                            // Check if profile already exists
+                            if (user.profile != null) {
+                                // Update existing profile
+                                userViewModel.updateUserProfile(
+                                    profileId = user.profile.id,
+                                    age = age,
+                                    gender = gender,
+                                    height = height,
+                                    weight = weight,
+                                    activityLevel = activityLevel
+                                )
+                            } else {
+                                // Create new profile
+                                userViewModel.createUserProfile(
+                                    userId = user.id,
+                                    age = age,
+                                    gender = gender,
+                                    height = height,
+                                    weight = weight,
+                                    activityLevel = activityLevel
+                                )
+                            }
                         }
                     }
                 },
@@ -291,18 +304,36 @@ fun BodyInfoScreen(
                         InfoRow("성별", bodyInfo.gender)
                         InfoRow("활동량", bodyInfo.activityLevel)
 
-                        Divider(modifier = Modifier.padding(vertical = 12.dp))
+                        // Show recommended water intake if profile is available
+                        if (userState is UserUiState.Success) {
+                            val user = (userState as UserUiState.Success).user
+                            user.profile?.let { profile ->
+                                Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                        Text(
-                            text = "권장 일일 물 섭취량",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Text(
-                            text = "${bodyInfo.calculateRecommendedWaterIntake()} ml",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                                Text(
+                                    text = "오늘 마신 물",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                                Text(
+                                    text = "${profile.todayAmount} ml",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.padding(bottom = 12.dp)
+                                )
+
+                                Text(
+                                    text = "권장 일일 물 섭취량",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                                Text(
+                                    text = "${profile.recommendAmount} ml",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                     }
                 }
             } else {

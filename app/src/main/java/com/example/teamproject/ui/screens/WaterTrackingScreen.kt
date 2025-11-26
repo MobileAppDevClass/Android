@@ -25,6 +25,8 @@ import com.example.teamproject.data.api.DrinkRecord
 import com.example.teamproject.viewmodel.CreateDrinkRecordUiState
 import com.example.teamproject.viewmodel.DrinkRecordsUiState
 import com.example.teamproject.viewmodel.DrinkViewModel
+import com.example.teamproject.viewmodel.UserUiState
+import com.example.teamproject.viewmodel.UserViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -33,7 +35,8 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WaterTrackingScreen(
-    drinkViewModel: DrinkViewModel = viewModel()
+    drinkViewModel: DrinkViewModel = viewModel(),
+    userViewModel: UserViewModel = viewModel()
 ) {
     var waterRecords by remember { mutableStateOf(listOf<WaterRecord>()) }
     var showDialog by remember { mutableStateOf(false) }
@@ -45,8 +48,16 @@ fun WaterTrackingScreen(
     val drinkRecordsState by drinkViewModel.drinkRecordsState.collectAsState()
     val createDrinkRecordState by drinkViewModel.createDrinkRecordState.collectAsState()
 
+    // Observe user state to get recommended water amount
+    val userState by userViewModel.userState.collectAsState()
+
     // Get lifecycle owner to observe lifecycle events
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Load user profile on first composition
+    LaunchedEffect(Unit) {
+        userViewModel.loadCurrentUser()
+    }
 
     // Function to load records for the selected date
     fun loadRecordsForDate(date: LocalDate) {
@@ -122,7 +133,15 @@ fun WaterTrackingScreen(
 
     // 선택된 날짜의 총 섭취량 계산
     val dailyTotal = waterRecords.sumOf { it.amount }
-    val recommendedAmount = 2000  // 임시로 2000ml 설정
+
+    // Get recommended amount from user profile, fallback to 2000ml if not available
+    val recommendedAmount = if (userState is UserUiState.Success) {
+        val user = (userState as UserUiState.Success).user
+        user.profile?.recommendAmount ?: 2000
+    } else {
+        2000
+    }
+
     val isToday = selectedDate == LocalDate.now()
 
     Column(

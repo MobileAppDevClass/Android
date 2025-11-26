@@ -68,6 +68,26 @@ data class UserProfileRequest(
 )
 
 /**
+ * Request model for updating user profile
+ */
+data class UpdateUserProfileRequest(
+    @SerializedName("age")
+    val age: Int,
+
+    @SerializedName("gender")
+    val gender: Gender,
+
+    @SerializedName("height")
+    val height: Double,
+
+    @SerializedName("weight")
+    val weight: Double,
+
+    @SerializedName("activityLevel")
+    val activityLevel: ActivityLevel
+)
+
+/**
  * Response model for user profile
  */
 data class UserProfileResponse(
@@ -90,7 +110,13 @@ data class UserProfileResponse(
     val activityLevel: ActivityLevel,
 
     @SerializedName("userId")
-    val userId: Long
+    val userId: Long,
+
+    @SerializedName("todayAmount")
+    val todayAmount: Int,
+
+    @SerializedName("recommendAmount")
+    val recommendAmount: Int
 )
 
 /**

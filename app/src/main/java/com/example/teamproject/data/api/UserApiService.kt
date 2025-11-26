@@ -3,7 +3,9 @@ package com.example.teamproject.data.api
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 /**
  * User API Service Interface
@@ -25,6 +27,18 @@ interface UserApiService {
     @POST("user-profiles")
     suspend fun createUserProfile(
         @Body request: UserProfileRequest
+    ): Response<UserProfileResponse>
+
+    /**
+     * Update user profile with physical information
+     * @param profileId Profile ID
+     * @param request UpdateUserProfileRequest containing age, gender, height, weight, and activity level
+     * @return UserProfileResponse with updated profile details
+     */
+    @PATCH("user-profiles/{profileId}")
+    suspend fun updateUserProfile(
+        @Path("profileId") profileId: Long,
+        @Body request: UpdateUserProfileRequest
     ): Response<UserProfileResponse>
 
     /**

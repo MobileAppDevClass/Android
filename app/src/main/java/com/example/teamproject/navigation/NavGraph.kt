@@ -39,7 +39,7 @@ sealed class Screen(
 
     object Friends : Screen(
         route = "friends",
-        title = "Friends",
+        title = "Leaderboard",
         selectedIcon = Icons.Filled.Group,
         unselectedIcon = Icons.Outlined.Group
     )

@@ -21,7 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.teamproject.navigation.Screen
 import com.example.teamproject.navigation.bottomNavItems
 import com.example.teamproject.ui.screens.BodyInfoScreen
-import com.example.teamproject.ui.screens.FriendsScreen
+import com.example.teamproject.ui.screens.LeaderboardScreen
 import com.example.teamproject.ui.screens.LoginScreen
 import com.example.teamproject.ui.screens.SignupScreen
 import com.example.teamproject.ui.screens.WaterTrackingScreen
@@ -208,7 +208,7 @@ fun WaterTrackingApp() {
                 )
             }
             composable(Screen.Friends.route) {
-                FriendsScreen(userViewModel = userViewModel)
+                LeaderboardScreen(userViewModel = userViewModel)
             }
         }
     }
